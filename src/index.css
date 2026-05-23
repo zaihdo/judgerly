@@ -77,6 +77,10 @@ body {
   margin-bottom: 1rem;
   background: #fff;
 }
+.selected-card {
+  border-color: var(--purple);
+  background: #f5f4ff;
+}
 
 .error { color: #dc2626; font-size: 0.9rem; margin-top: 0.4rem; }
 .success { color: #16a34a; font-size: 0.9rem; margin-top: 0.4rem; }
@@ -156,3 +160,37 @@ table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 th, td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); text-align: left; }
 th { font-weight: 600; background: #f9fafb; }
 .rank-1 { font-weight: 700; color: var(--purple); }
+
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-brand { font-weight: 700; font-size: 1rem; color: var(--purple); }
+.nav-back {
+  background: none;
+  border: none;
+  color: var(--purple);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  font-weight: 500;
+}
+.nav-links { display: flex; gap: 0.5rem; align-items: center; }
+.nav-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius);
+  transition: background 0.15s;
+}
+.nav-link:hover { background: #f0eeff; color: var(--purple); }
