@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
+import Nav from '../components/Nav'
 
 export default function ResultsPage() {
   const { competitionId } = useParams()
+  const [searchParams] = useSearchParams()
   const [authed, setAuthed] = useState(() => !!sessionStorage.getItem(`results_auth_${competitionId}`))
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
@@ -35,19 +37,24 @@ export default function ResultsPage() {
   const loadData = useCallback(async () => {
     if (!authed) return
     setLoading(true)
+
     const { data: comp } = await supabase.from('competitions').select('*').eq('id', competitionId).single()
     setCompetition(comp)
 
-    const { data: cats } = await supabase.from('categories').select('*').eq('competition_id', competitionId).order('created_at')
+    const { data: cats, error: catErr } = await supabase.from('categories').select('*').eq('competition_id', competitionId)
+    if (catErr) { console.error('categories:', catErr); setLoading(false); return }
     const catIds = (cats || []).map(c => c.id)
 
-    const { data: tracks } = await supabase.from('tracks').select('*').in('category_id', catIds.length ? catIds : ['']).order('created_at')
+    const { data: tracks, error: trackErr } = await supabase.from('tracks').select('*').in('category_id', catIds.length ? catIds : [''])
+    if (trackErr) { console.error('tracks:', trackErr); setLoading(false); return }
     const trackIds = (tracks || []).map(t => t.id)
 
-    const { data: participants } = await supabase.from('participants').select('*').in('track_id', trackIds.length ? trackIds : ['']).order('created_at')
+    const { data: participants, error: partErr } = await supabase.from('participants').select('*').in('track_id', trackIds.length ? trackIds : [''])
+    if (partErr) { console.error('participants:', partErr); setLoading(false); return }
     const pIds = (participants || []).map(p => p.id)
 
-    const { data: scores } = await supabase.from('scores').select('*').in('participant_id', pIds.length ? pIds : [''])
+    const { data: scores, error: scoresErr } = await supabase.from('scores').select('*').in('participant_id', pIds.length ? pIds : [''])
+    if (scoresErr) { console.error('scores:', scoresErr) }
     setAllScores(scores || [])
 
     const structured = (cats || []).map(cat => ({
@@ -58,9 +65,12 @@ export default function ResultsPage() {
       }))
     }))
     setCategories(structured)
-    setSelectedCat(prev => prev ?? (structured.length ? structured[0].id : null))
+    const catParam = searchParams.get('cat')
+    const trackParam = searchParams.get('track')
+    setSelectedCat(prev => prev ?? catParam ?? (structured.length ? structured[0].id : null))
+    if (trackParam) setSelectedTrack(prev => prev ?? trackParam)
     setLoading(false)
-  }, [authed, competitionId])
+  }, [authed, competitionId, searchParams])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -74,7 +84,9 @@ export default function ResultsPage() {
 
   if (!authed) {
     return (
-      <div className="container">
+      <>
+        <Nav />
+        <div className="container">
         <div className="page-header"><h1>Judgerly &mdash; Results</h1></div>
         <div className="card">
           <h2>Enter Competition Password</h2>
@@ -86,16 +98,17 @@ export default function ResultsPage() {
             </button>
           </form>
         </div>
-      </div>
+        </div>
+      </>
     )
   }
 
-  if (loading) return <div className="container"><p className="loading mt-md">Loading results</p></div>
+  if (loading) return <><Nav /><div className="container"><p className="loading mt-md">Loading results</p></div></>
 
   const currentCat = categories.find(c => c.id === selectedCat)
   const currentTrack = currentCat?.tracks?.find(t => t.id === selectedTrack) || currentCat?.tracks?.[0]
 
-  const uniqueJudges = [...new Set(allScores.map(s => s.judge_name))]
+  const uniqueJudges = [...new Set(allScores.map(s => s.judge_name).filter(Boolean))]
 
   function getLeaderboard(track) {
     if (!track) return []
@@ -127,7 +140,9 @@ export default function ResultsPage() {
   const { judges: breakdownJudges, rows: breakdownRows } = getJudgeBreakdown(currentTrack)
 
   return (
-    <div className="container">
+    <>
+      <Nav />
+      <div className="container">
       <div className="page-header">
         <h1>{competition?.name || 'Results'}</h1>
         <p style={{ color: '#e0dfff', fontSize: '0.9rem' }}>{uniqueJudges.length} judge(s) submitted scores</p>
@@ -207,6 +222,7 @@ export default function ResultsPage() {
           )}
         </>
       )}
-    </div>
+      </div>
+    </>
   )
 }
