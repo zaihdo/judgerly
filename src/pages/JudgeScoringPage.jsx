@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../supabase'
+import Nav from '../components/Nav'
 
 export default function JudgeScoringPage() {
   const { competitionId } = useParams()
@@ -115,14 +116,16 @@ export default function JudgeScoringPage() {
     }
   }
 
-  if (loading) return <div className="container"><p className="loading mt-md">Loading</p></div>
-  if (error) return <div className="container"><p className="error mt-md">{error}</p></div>
+  if (loading) return <><Nav /><div className="container"><p className="loading mt-md">Loading</p></div></>
+  if (error) return <><Nav /><div className="container"><p className="error mt-md">{error}</p></div></>
 
   const trackParticipants = currentTrack?.participants || []
   const scoredCount = trackParticipants.filter(p => scoredMap[p.id]).length
 
   return (
-    <div className="container">
+    <>
+      <Nav />
+      <div className="container">
       <div className="page-header">
         <h1>{competition?.name}</h1>
         <p style={{ color: '#e0dfff', fontSize: '0.9rem' }}>Judge: {judgeName}</p>
@@ -188,7 +191,8 @@ export default function JudgeScoringPage() {
           })()}
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
 

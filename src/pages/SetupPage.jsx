@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
+import Nav from '../components/Nav'
 
 export default function SetupPage() {
   const [step, setStep] = useState('competition')
@@ -52,7 +53,9 @@ export default function SetupPage() {
 
   if (step === 'competition') {
     return (
-      <div className="container">
+      <>
+        <Nav />
+        <div className="container">
         <div className="page-header">
           <h1>Judgerly &mdash; Setup</h1>
         </div>
@@ -71,12 +74,15 @@ export default function SetupPage() {
             </button>
           </form>
         </div>
-      </div>
+        </div>
+      </>
     )
   }
 
   return (
-    <div className="container">
+    <>
+      <Nav />
+      <div className="container">
       <div className="page-header">
         <h1>Judgerly &mdash; Setup</h1>
       </div>
@@ -107,7 +113,8 @@ export default function SetupPage() {
         <p className="mt-sm bold" style={{ fontSize: '1.1rem' }}>{competition.id}</p>
         <p className="muted mt-sm">Judges go to <strong>/judge</strong> and enter the password: <strong>{competition.password}</strong></p>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
