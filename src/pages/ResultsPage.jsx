@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Nav from '../components/Nav'
 
 export default function ResultsPage() {
   const { competitionId } = useParams()
+  const [searchParams] = useSearchParams()
   const [authed, setAuthed] = useState(() => !!sessionStorage.getItem(`results_auth_${competitionId}`))
   const [password, setPassword] = useState('')
   const [authError, setAuthError] = useState('')
@@ -64,9 +65,12 @@ export default function ResultsPage() {
       }))
     }))
     setCategories(structured)
-    setSelectedCat(prev => prev ?? (structured.length ? structured[0].id : null))
+    const catParam = searchParams.get('cat')
+    const trackParam = searchParams.get('track')
+    setSelectedCat(prev => prev ?? catParam ?? (structured.length ? structured[0].id : null))
+    if (trackParam) setSelectedTrack(prev => prev ?? trackParam)
     setLoading(false)
-  }, [authed, competitionId])
+  }, [authed, competitionId, searchParams])
 
   useEffect(() => { loadData() }, [loadData])
 
