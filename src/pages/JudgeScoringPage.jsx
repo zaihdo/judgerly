@@ -18,6 +18,11 @@ export default function JudgeScoringPage() {
   const [selectedParticipant, setSelectedParticipant] = useState(null)
   const [scoredMap, setScoredMap] = useState({})
 
+  const [addingParticipant, setAddingParticipant] = useState(false)
+  const [newParticipantName, setNewParticipantName] = useState('')
+  const [addParticipantLoading, setAddParticipantLoading] = useState(false)
+  const [addParticipantError, setAddParticipantError] = useState('')
+
   const loadData = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -100,11 +105,38 @@ export default function JudgeScoringPage() {
     setSelectedCat(catId)
     setSelectedTrack(null)
     setSelectedParticipant(null)
+    setAddingParticipant(false)
   }
 
   function handleTrackSelect(trackId) {
     setSelectedTrack(trackId)
     setSelectedParticipant(null)
+    setAddingParticipant(false)
+  }
+
+  async function handleAddParticipant(e) {
+    e.preventDefault()
+    if (!newParticipantName.trim() || !currentTrack) return
+    setAddParticipantLoading(true)
+    setAddParticipantError('')
+    const { data, error: err } = await supabase
+      .from('participants')
+      .insert({ track_id: currentTrack.id, name: newParticipantName.trim() })
+      .select()
+      .single()
+    setAddParticipantLoading(false)
+    if (err) { setAddParticipantError(err.message); return }
+    setCategories(prev => prev.map(cat => ({
+      ...cat,
+      tracks: cat.tracks.map(track =>
+        track.id === currentTrack.id
+          ? { ...track, participants: [...track.participants, data] }
+          : track
+      )
+    })))
+    setNewParticipantName('')
+    setAddingParticipant(false)
+    setSelectedParticipant(data.id)
   }
 
   function handleScoreSubmitted(participantId, scoreRow) {
@@ -174,6 +206,31 @@ export default function JudgeScoringPage() {
               </div>
             ))}
             {trackParticipants.length === 0 && <p className="muted" style={{ padding: '1rem' }}>No participants in this track.</p>}
+          </div>
+
+          <div className="mt-sm" style={{ textAlign: 'right' }}>
+            {!addingParticipant
+              ? <button className="btn-outline btn-sm" onClick={() => { setAddingParticipant(true); setAddParticipantError('') }}>+ Add Walk-in Participant</button>
+              : (
+                <form onSubmit={handleAddParticipant} className="card mt-sm" style={{ textAlign: 'left' }}>
+                  <p className="bold mb-sm">Add Walk-in Participant</p>
+                  <div className="flex" style={{ gap: '0.5rem' }}>
+                    <input
+                      className="input flex-1"
+                      placeholder="Participant name"
+                      value={newParticipantName}
+                      onChange={e => setNewParticipantName(e.target.value)}
+                      autoFocus
+                    />
+                    <button className="btn" type="submit" disabled={addParticipantLoading}>
+                      {addParticipantLoading ? '...' : 'Add'}
+                    </button>
+                    <button className="btn-outline" type="button" onClick={() => setAddingParticipant(false)}>Cancel</button>
+                  </div>
+                  {addParticipantError && <p className="error mt-sm">{addParticipantError}</p>}
+                </form>
+              )
+            }
           </div>
 
           {trackParticipants.length > 0 && scoredCount === trackParticipants.length && (
